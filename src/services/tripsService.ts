@@ -1,54 +1,58 @@
-import axios from 'axios'; 
+import axios from 'axios';
+import Trip from '../models/Trip';
 import dotenv from 'dotenv';
+import { InterfaceTrip } from '../interfaces/TripInterface';
 
 dotenv.config();
-
-interface Trip {
-    origin: string; 
-    destination: string; 
-    cost: number; 
-    duration: number; 
-    type: string; 
-    id: string;
-    display_name: string;
-}
 
 const API_URL = 'https://z0qw1e7jpd.execute-api.eu-west-1.amazonaws.com/default/trips';
 const API_KEY = process.env.API_KEY;
 
-export const getTrips = async (origin: string, destination: string, sort_by: string): Promise<Trip[]> => {
-    console.log(origin)
-    console.log(destination)
-    console.log(sort_by)
-    console.log(API_KEY)
+export const searchTrips = async (origin: string, destination: string, sort_by: string): Promise<InterfaceTrip[]> => {
+  try {
+    const response = await axios.get<InterfaceTrip[]>(API_URL, {
+      headers: { 'x-api-key': API_KEY },
+      params: { origin, destination, sort_by }
+    });
 
-    try { 
-        console.log("Hererrerer 1")
-        const response = await axios.get<Trip[]>(API_URL, {
-            headers: { 'x-api-key': API_KEY },
-            params: { origin, destination, sort_by }
-        });
-        console.log('API response:', response); 
+    const filteredTrips = response.data.filter(trip => trip.origin === origin && trip.destination === destination);
 
-
-        // filter trips by origin and destination
-        const filteredTrips = response.data.filter(trip => 
-            trip.origin === origin && trip.destination === destination
-        );
-
-        // sort by fastest or cheapest 
-        if(sort_by === 'fastest') 
-        {
-            filteredTrips.sort((a,b) => a.duration - b.duration);
-        }
-        else if (sort_by === 'cheapest') 
-        {
-            filteredTrips.sort((a,b) => a.cost - b.cost); 
-        }
-
-        return filteredTrips;
+    if (sort_by === 'fastest') {
+      filteredTrips.sort((a, b) => a.duration - b.duration);
+    } else if (sort_by === 'cheapest') {
+      filteredTrips.sort((a, b) => a.cost - b.cost);
     }
-    catch (error) {
-        throw new Error('Error fetching trips'); 
-    }
-}; 
+
+    return filteredTrips;
+  } catch (error) {
+    throw new Error('Error fetching trips: ' + error);
+  }
+};
+
+export const saveTrip = async (tripData: any) => {
+  try {
+    const trip = await Trip.create(tripData);
+    console.log('Trip saved to the database');
+    return trip;
+  } catch (error) {
+    throw new Error('Error saving trip: ' + error);
+  }
+};
+
+export const listTrips = async () => {
+  try {
+    const trips = await Trip.findAll();
+    return trips;
+  } catch (error) {
+    throw new Error('Error retrieving trips: ' + error);
+  }
+};
+
+export const deleteTrip = async (id: string) => {
+  try {
+    const result = await Trip.destroy({ where: { id } });
+    if (result === 0) throw new Error('Trip not found');
+  } catch (error) {
+    throw new Error('Error deleting trip: ' + error);
+  }
+};

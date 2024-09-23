@@ -1,1 +1,6 @@
-API_KEY=test
+API_KEY=testApiKey
+PORT=testPort
+DB_NAME=testDbName
+DB_USER=testUser
+DB_PASS=testPassword
+DB_HOST=testHost
