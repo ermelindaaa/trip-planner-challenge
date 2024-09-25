@@ -1,36 +1,44 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { searchTrips, saveTrip, listTrips, deleteTrip } from '../services/tripsService';
-import { validateParams } from '../utils/validateParams';
 
 const router = Router();
 
-// Search trips 
+// validate query params 
+const queryParamsSchema = z.object({
+  origin: z.string().min(3).max(3).regex(/^[A-Z]{3}$/, 'Origin must be a 3-letter code').transform(str => str.toUpperCase()),
+  destination: z.string().min(3).max(3).regex(/^[A-Z]{3}$/, 'Destination must be a 3-letter code').transform(str => str.toUpperCase()),
+  sort_by: z.enum(['fastest', 'cheapest']).optional()
+});
+
+// search trips 
 router.get('/trips', async (req: Request, res: Response) => {
-  const { origin, destination, sort_by } = req.query;
-
-  // Check if the origin and destination are valid
-  const errorMessage = validateParams(origin as string, destination as string);
-  if (errorMessage) return res.status(400).json({ error: errorMessage });
-
   try {
-    const trips = await searchTrips(origin as string, destination as string, sort_by as string);
+    const queryParams = queryParamsSchema.parse(req.query); // Validate query params with Zod
+
+    console.log(queryParams)
+    const trips = await searchTrips(queryParams.origin, queryParams.destination, queryParams.sort_by);
+    console.log(trips)
     res.json(trips);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch trips' });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    res.status(500).send('Failed to fetch trips: ' + (error as Error).message);
   }
 });
 
-// Save a trip
+// save a trip
 router.post('/trip', async (req: Request, res: Response) => {
   try {
-    const trip = await saveTrip(req.body);
-    res.status(201).json({ message: 'Trip saved to the database', trip });
+    const trip = await saveTrip(req.body); 
+    res.status(201).json(trip);
   } catch (error) {
     res.status(500).send('Error saving trip: ' + error);
   }
 });
 
-// List all saved trips
+// list all saved trips
 router.get('/savedTrips', async (req: Request, res: Response) => {
   try {
     const trips = await listTrips();
@@ -40,12 +48,12 @@ router.get('/savedTrips', async (req: Request, res: Response) => {
   }
 });
 
-// Delete a trip
+// delete a trip
 router.delete('/trip/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     await deleteTrip(id);
-    res.send('Trip deleted successfully');
+    res.send({});
   } catch (error) {
     res.status(500).send('Error deleting trip: ' + error);
   }

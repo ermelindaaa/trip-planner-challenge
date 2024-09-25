@@ -10,6 +10,7 @@ class Trip extends Model {
   public duration!: number;
   public type!: string;
   public display_name!: string;
+  public deleted!: boolean; // deleted column to use for deleteTrip
 }
 
 Trip.init(
@@ -42,13 +43,18 @@ Trip.init(
     display_name: {
       type: DataTypes.STRING,
     },
+    deleted: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: 0, 
+    },
   },
   {
     sequelize,
     modelName: 'Trip',
     tableName: 'trips',
-    timestamps: false, 
+    timestamps: true, // adding createdAt and updatetAt to keep track
   }
-);
+)
 
 export default Trip;
