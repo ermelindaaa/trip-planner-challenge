@@ -1,6 +1,7 @@
 import { DataTypes, Model } from "sequelize";
-import sequelize from "../database/database";
+import sequelize from "../database/sequelize";
 
+// sequelize model definition for the 'Trip' entity
 class Trip extends Model {
   declare id: string;
   declare origin: string;
@@ -53,9 +54,26 @@ Trip.init(
     modelName: "Trip",
     tableName: "trips",
     underscored: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    createdAt: "created_at",
+    updatedAt: "updated_at",
     timestamps: true, // adding created_at and updated_at to keep track
+    // defaultScope: {
+    //   attributes: { exclude: ["deleted"] },
+    // },
+    // scopes: {
+    //   withDeleted: {
+    //     attributes: [
+    //       "origin",
+    //       "destination",
+    //       "cost",
+    //       "duration",
+    //       "type",
+    //       "id",
+    //       "display_name",
+    //       "deleted",
+    //     ],
+    //   },
+    // },
   },
 );
 

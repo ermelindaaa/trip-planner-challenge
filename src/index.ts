@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import tripRoutes from "./routes/trips";
-import sequelize from "./database/database";
+import sequelize from "./database/sequelize";
 import logger from "./logger/logger";
 import { loadEnv } from "./utils/loadEnv";
 
@@ -21,9 +21,8 @@ app.listen(PORT, async () => {
     await sequelize.authenticate();
     logger.info("Connected to db!");
     await sequelize.sync({ alter: true });
-    // await sequelize.sync({ force: true });
   } catch (e) {
-    logger.debug(e);
+    logger.error(e);
     throw new Error("Failed to connect to the database");
   }
 });

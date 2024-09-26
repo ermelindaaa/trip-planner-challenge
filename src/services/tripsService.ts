@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ClientError } from "../errors/ClientError";
 import logger from "../logger/logger";
 
-// search trips and sort them by fastest or cheapest (as well added type filter in query params)
+// search trips and sort them by fastest or cheapest
 export const searchTrips = async (
   origin: string,
   destination: string,
@@ -30,87 +30,67 @@ export const searchTrips = async (
       filteredTrips.sort((a, b) => a.cost - b.cost);
     }
 
+    // option to filter trips by type
     if (type) {
       filteredTrips = filteredTrips.filter((trip) => trip.type === type);
     }
 
     return filteredTrips;
   } catch (error) {
+    logger.error(error);
     throw new ClientError("ErrorFetchingTrips", "Error fetching trips.");
   }
 };
 
-// search if trip already exists on database and save new ones
+// save a trip
 export const saveTrip = async (tripData: object) => {
-  try {
-    const parsedTripData = TripSchema.parse(tripData);
+  const parsedTripData = TripSchema.parse(tripData);
 
-    const existingTrip = await Trip.findOne({
-      where: {
-        id: parsedTripData.id,
-        // deleted: false,
-      },
-    });
+  // Check if the trip already exists (including deleted ones)
+  const existingTrip = await Trip.findOne({
+    where: { id: parsedTripData.id },
+  });
 
-    if (existingTrip) {
-      if (existingTrip.deleted) {
-        // Restore and update the deleted trip
-        await existingTrip.update({ ...parsedTripData, deleted: false });
-        logger.info(`Deleted trip with id ${parsedTripData.id} has been restored and updated.`);
-        const restoredTrip = await Trip.findOne({
-          where: { id: parsedTripData.id },
-          attributes: { exclude: ['deleted'] }, // Exclude `deleted`
-        });
-        return restoredTrip;
-        // return existingTrip;
-      } else {
-        throw new ClientError("TripExistsError", "This trip already exists.");
-      }
-    }
-
-    // Create a new trip if none exists
-    const trip = await Trip.create(parsedTripData);
+  if (existingTrip && existingTrip.deleted) {
+    await existingTrip.update({ ...parsedTripData, deleted: false });
+    logger.info(
+      `Deleted trip with ID ${parsedTripData.id} has been restored and updated.`,
+    );
+    return existingTrip;
+  } else if (existingTrip && !existingTrip.deleted) {
+    throw new ClientError("TripExistsError", "This trip already exists.");
+  } else {
+    const newTrip = await Trip.create(parsedTripData);
     logger.info(`Trip with id ${parsedTripData.id} saved to the database.`);
-    const newTrip = await Trip.findOne({
-      where: { id: trip.id },
-      attributes: { exclude: ['deleted'] }, // Exclude `deleted`
-    });
     return newTrip;
-  } catch (error) {
-    throw new ClientError("SaveTripError", "Error saving trip.");
   }
 };
 
-// list all saved trips (removed deleted ones)
+// list all saved trips
 export const listTrips = async () => {
   try {
     const trips = await Trip.findAll({
       where: {
         deleted: false,
       },
-      attributes: { exclude: ['deleted'] },
     });
 
     return trips;
   } catch (error) {
+    logger.error("Error retrieving trips: " + error);
     throw new ClientError("RetrivingTripsError", "Error retrieving trips.");
   }
 };
 
 //delete trip by id
 export const deleteTrip = async (id: string) => {
-  try {
-
-    const result = await Trip.update({ deleted: true },{ where: { id } });
-
-
-    if (result[0] === 0) {
-      throw new ClientError ("TripNotFound", "Trip not found")
-    }
-    const trip = await Trip.findOne({ where: { id }, 
-      attributes: { exclude: ['deleted'] }, })
-    return trip 
-  } catch (error) {
-    throw new Error("Error deleting trip: " + error);
+  const trip = await Trip.findOne({
+    where: { id },
+  });
+  if (!trip || trip.deleted) {
+    throw new ClientError("TripNotFound", "Trip not found");
   }
+  await trip.update({ deleted: true });
+  logger.info(`Trip with ID ${id} has been deleted.`);
+  return trip;
 };

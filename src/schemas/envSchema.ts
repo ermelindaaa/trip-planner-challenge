@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// define schema for validating environment variables using Zod
 export const envSchema = z.object({
   API_URL: z.string().url(),
   API_KEY: z.string().min(1, "API_KEY is required"),

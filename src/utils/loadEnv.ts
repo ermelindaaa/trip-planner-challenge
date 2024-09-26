@@ -4,6 +4,7 @@ import { z } from "zod";
 
 dotenv.config();
 
+// load and validate environment variables using dotenv and zod schema validation
 declare global {
   namespace NodeJS {
     interface ProcessEnv extends z.infer<typeof envSchema> {}

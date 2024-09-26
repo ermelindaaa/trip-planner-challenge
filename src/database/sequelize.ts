@@ -3,7 +3,7 @@ import logger from "../logger/logger";
 import dotenv from "dotenv";
 dotenv.config();
 
-// initialize sequelize
+// set up request interceptors for the Axios instance
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,

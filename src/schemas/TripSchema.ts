@@ -12,4 +12,4 @@ const TripSchema = z.object({
   display_name: z.string(),
 });
 
-export { TripSchema};
+export { TripSchema };

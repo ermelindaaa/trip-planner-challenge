@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// validation of query parameters
 const QueryParamsSchema = z.object({
   origin: z
     .string()
@@ -15,4 +16,4 @@ const QueryParamsSchema = z.object({
   type: z.enum(["car", "flight", "train"]).optional(),
 });
 
-export default QueryParamsSchema;
+export { QueryParamsSchema };

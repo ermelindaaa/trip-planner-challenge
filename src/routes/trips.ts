@@ -8,10 +8,9 @@ import {
   listTrips,
   deleteTrip,
 } from "../services/tripsService";
-import QueryParamsSchema from "../schemas/QueryParamsSchema";
+import { QueryParamsSchema } from "../schemas/QueryParamsSchema";
 
 const tripsRouter = Router();
-
 
 // search trips
 tripsRouter.get("/trips", async (req: Request, res: Response) => {
@@ -84,7 +83,6 @@ tripsRouter.delete("/trip/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const deletedTrip = await deleteTrip(id);
-    // res.send({});
     res.status(200).json(deletedTrip);
   } catch (error) {
     if (error instanceof ClientError) {

@@ -2,6 +2,7 @@ import { createLogger, format, transports } from "winston";
 import dotenv from "dotenv";
 dotenv.config();
 
+// logger configuration using Winston
 const logger = createLogger({
   level: process.env.NODE_ENV === "development" ? "debug" : "error",
   format: format.combine(
@@ -12,7 +13,7 @@ const logger = createLogger({
         level: level,
         message: message,
       });
-    })
+    }),
   ),
   transports: [new transports.Console()],
 });
