@@ -14,15 +14,19 @@ app.use("/api", tripRoutes);
 
 const PORT = process.env.PORT ?? 3000;
 
-app.listen(PORT, async () => {
-  loadEnv();
-  logger.info(`App is listening on port ${PORT}`);
-  try {
-    await sequelize.authenticate();
-    logger.info("Connected to db!");
-    await sequelize.sync({ alter: true });
-  } catch (e) {
-    logger.error(e);
-    throw new Error("Failed to connect to the database");
-  }
-});
+if (require.main === module) {
+  app.listen(PORT, async () => {
+    loadEnv();
+    logger.info(`App is listening on port ${PORT}`);
+    try {
+      await sequelize.authenticate();
+      logger.info("Connected to db!");
+      await sequelize.sync({ alter: true });
+    } catch (e) {
+      logger.error(e);
+      throw new Error("Failed to connect to the database");
+    }
+  });
+}
+
+export { app }
