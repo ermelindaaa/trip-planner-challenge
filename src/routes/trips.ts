@@ -1,62 +1,101 @@
-import { Router, Request, Response } from 'express';
-import { z } from 'zod';
-import { searchTrips, saveTrip, listTrips, deleteTrip } from '../services/tripsService';
+import { Router, Request, Response } from "express";
+import { z } from "zod";
+import logger from "../logger/logger";
+import { ClientError } from "../errors/ClientError";
+import {
+  searchTrips,
+  saveTrip,
+  listTrips,
+  deleteTrip,
+} from "../services/tripsService";
+import QueryParamsSchema from "../schemas/QueryParamsSchema";
 
-const router = Router();
+const tripsRouter = Router();
 
-// validate query params 
-const queryParamsSchema = z.object({
-  origin: z.string().min(3).max(3).regex(/^[A-Z]{3}$/, 'Origin must be a 3-letter code').transform(str => str.toUpperCase()),
-  destination: z.string().min(3).max(3).regex(/^[A-Z]{3}$/, 'Destination must be a 3-letter code').transform(str => str.toUpperCase()),
-  sort_by: z.enum(['fastest', 'cheapest']).optional()
-});
 
-// search trips 
-router.get('/trips', async (req: Request, res: Response) => {
+// search trips
+tripsRouter.get("/trips", async (req: Request, res: Response) => {
   try {
-    const queryParams = queryParamsSchema.parse(req.query); // Validate query params with Zod
-
-    console.log(queryParams)
-    const trips = await searchTrips(queryParams.origin, queryParams.destination, queryParams.sort_by);
-    console.log(trips)
+    const queryParams = QueryParamsSchema.parse(req.query);
+    // console.log(queryParams);
+    const trips = await searchTrips(
+      queryParams.origin,
+      queryParams.destination,
+      queryParams.sort_by,
+      queryParams.type,
+    );
+    // console.log(trips);
     res.json(trips);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
+      const formattedErrors = error.errors.map((err) => ({
+        path: err.path,
+        message: err.message,
+        code: err.code,
+      }));
+      return res
+        .status(400)
+        .json({ name: error.name, errors: formattedErrors });
     }
-    res.status(500).send('Failed to fetch trips: ' + (error as Error).message);
+
+    logger.error("Failed to fetch trips:", error);
+    return res
+      .status(500)
+      .json({ name: "InternalServerError", message: "Something went wrong" });
   }
 });
 
 // save a trip
-router.post('/trip', async (req: Request, res: Response) => {
+tripsRouter.post("/trip", async (req: Request, res: Response) => {
   try {
-    const trip = await saveTrip(req.body); 
+    const trip = await saveTrip(req.body);
     res.status(201).json(trip);
   } catch (error) {
-    res.status(500).send('Error saving trip: ' + error);
+    if (error instanceof ClientError) {
+      return res.status(400).json({ name: error.name, message: error.message });
+    }
+
+    logger.error("Error saving trip:", error);
+    return res
+      .status(500)
+      .json({ name: "InternalServerError", message: "Something went wrong" });
   }
 });
 
 // list all saved trips
-router.get('/savedTrips', async (req: Request, res: Response) => {
+tripsRouter.get("/savedTrips", async (req: Request, res: Response) => {
   try {
     const trips = await listTrips();
     res.json(trips);
   } catch (error) {
-    res.status(500).send('Error retrieving trips: ' + error);
+    if (error instanceof ClientError) {
+      return res.status(400).json({ name: error.name, message: error.message });
+    }
+
+    logger.error("Error saving trip:", error);
+    return res
+      .status(500)
+      .json({ name: "InternalServerError", message: "Something went wrong" });
   }
 });
 
 // delete a trip
-router.delete('/trip/:id', async (req: Request, res: Response) => {
+tripsRouter.delete("/trip/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    await deleteTrip(id);
-    res.send({});
+    const deletedTrip = await deleteTrip(id);
+    // res.send({});
+    res.status(200).json(deletedTrip);
   } catch (error) {
-    res.status(500).send('Error deleting trip: ' + error);
+    if (error instanceof ClientError) {
+      return res.status(400).json({ name: error.name, message: error.message });
+    }
+
+    logger.error("Error deleting trip:", error);
+    return res
+      .status(500)
+      .json({ name: "InternalServerError", message: "Something went wrong" });
   }
 });
 
-export default router;
+export default tripsRouter;

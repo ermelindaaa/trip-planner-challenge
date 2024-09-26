@@ -1,16 +1,15 @@
-import { DataTypes, Model } from 'sequelize';
-import sequelize from '../database/database';
-
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../database/database";
 
 class Trip extends Model {
-  public id!: string;
-  public origin!: string;
-  public destination!: string;
-  public cost!: number;
-  public duration!: number;
-  public type!: string;
-  public display_name!: string;
-  public deleted!: boolean; // deleted column to use for deleteTrip
+  declare id: string;
+  declare origin: string;
+  declare destination: string;
+  declare cost: number;
+  declare duration: number;
+  declare type: string;
+  declare display_name: string;
+  declare deleted: boolean; // deleted column to use for deleteTrip
 }
 
 Trip.init(
@@ -46,15 +45,18 @@ Trip.init(
     deleted: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: 0, 
+      defaultValue: 0,
     },
   },
   {
     sequelize,
-    modelName: 'Trip',
-    tableName: 'trips',
-    timestamps: true, // adding createdAt and updatetAt to keep track
-  }
-)
+    modelName: "Trip",
+    tableName: "trips",
+    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    timestamps: true, // adding created_at and updated_at to keep track
+  },
+);
 
 export default Trip;
